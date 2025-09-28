@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="tr">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -23,7 +24,7 @@
             margin: 0 auto;
             background: white;
             border-radius: 12px;
-            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
             overflow: hidden;
         }
 
@@ -120,8 +121,13 @@
         }
 
         @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
         }
 
         .results {
@@ -189,6 +195,13 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .header-buttons {
+            display: flex;
+            gap: 10px;
         }
 
         .prd-content {
@@ -197,7 +210,9 @@
             overflow-y: auto;
         }
 
-        .prd-content h1, .prd-content h2, .prd-content h3 {
+        .prd-content h1,
+        .prd-content h2,
+        .prd-content h3 {
             color: #333;
             margin-bottom: 15px;
         }
@@ -218,7 +233,8 @@
             color: #555;
         }
 
-        .prd-content ul, .prd-content ol {
+        .prd-content ul,
+        .prd-content ol {
             margin: 10px 0 10px 20px;
         }
 
@@ -284,21 +300,22 @@
                 margin: 10px;
                 border-radius: 8px;
             }
-            
+
             .header h1 {
                 font-size: 2rem;
             }
-            
+
             .main-content {
                 padding: 20px;
             }
-            
+
             .input-section {
                 padding: 20px;
             }
         }
     </style>
 </head>
+
 <body>
     <div class="container">
         <div class="header">
@@ -312,7 +329,7 @@
                     <label for="github-url">GitHub Issue URL:</label>
                     <input type="url" id="github-url" placeholder="https://github.com/owner/repo/issues/123" />
                 </div>
-                
+
                 <button class="btn" onclick="analyzeIssue()">📋 PRD Oluştur</button>
 
                 <div class="example-urls">
@@ -340,7 +357,11 @@
                 <div class="prd-section">
                     <div class="prd-header">
                         <h3>📄 PRD Dökümanı</h3>
-                        <button class="copy-btn" onclick="copyPRD()">📋 Kopyala</button>
+                        <div class="header-buttons">
+                            <button class="copy-btn" onclick="copyPRD()">📋 Kopyala</button>
+                            <button class="copy-btn" onclick="downloadPRD()" style="background: #17a2b8;">📥
+                                İndir</button>
+                        </div>
                     </div>
                     <div class="prd-content" id="prd-content">
                         <!-- PRD içeriği buraya gelecek -->
@@ -361,7 +382,7 @@
 
         async function analyzeIssue() {
             const url = document.getElementById('github-url').value.trim();
-            
+
             if (!url) {
                 showError('Lütfen bir GitHub issue URL\'i girin.');
                 return;
@@ -412,12 +433,9 @@
             // Issue bilgilerini göster
             const issueInfo = document.getElementById('issue-info');
             issueInfo.innerHTML = `
-                <div class="issue-title">#${data.issue.number}: ${data.issue.title}</div>
+                <div class="issue-title">${data.issue.title}</div>
                 <div class="issue-meta">
-                    📅 Oluşturulma: ${new Date(data.issue.created_at).toLocaleDateString('tr-TR')} | 
-                    👤 Kullanıcı: ${data.issue.user.login} | 
-                    🏷️ Durum: ${data.issue.state} | 
-                    ${data.issue.labels.map(label => `<span style="background: #${label.color}; color: white; padding: 2px 8px; border-radius: 12px; font-size: 0.8rem; margin-right: 5px;">${label.name}</span>`).join('')}
+                    📄 Issue İçeriği: ${data.issue.body ? data.issue.body.substring(0, 100) + '...' : 'Açıklama yok'}
                 </div>
             `;
 
@@ -460,13 +478,13 @@
         function copyPRD() {
             const prdContent = document.getElementById('prd-content');
             const text = prdContent.innerText;
-            
+
             navigator.clipboard.writeText(text).then(() => {
                 const btn = document.querySelector('.copy-btn');
                 const originalText = btn.textContent;
                 btn.textContent = '✅ Kopyalandı!';
                 btn.style.background = '#28a745';
-                
+
                 setTimeout(() => {
                     btn.textContent = originalText;
                     btn.style.background = '#28a745';
@@ -475,6 +493,39 @@
                 console.error('Kopyalama hatası:', err);
                 alert('Kopyalama başarısız. Lütfen içeriği manuel olarak kopyalayın.');
             });
+        }
+
+        function downloadPRD() {
+            const prdContent = document.getElementById('prd-content');
+            const text = prdContent.innerText;
+
+            // Create blob with markdown content
+            const blob = new Blob([text], { type: 'text/markdown' });
+
+            // Create download link
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'prd.md';
+
+            // Trigger download
+            document.body.appendChild(a);
+            a.click();
+
+            // Clean up
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+
+            // Update button text temporarily
+            const downloadBtn = document.querySelector('.header-buttons .copy-btn:last-child');
+            const originalText = downloadBtn.textContent;
+            downloadBtn.textContent = '✅ İndirildi!';
+            downloadBtn.style.background = '#28a745';
+
+            setTimeout(() => {
+                downloadBtn.textContent = originalText;
+                downloadBtn.style.background = '#17a2b8';
+            }, 2000);
         }
 
         function showLoading() {
@@ -506,11 +557,12 @@
         }
 
         // Enter tuşu ile gönder
-        document.getElementById('github-url').addEventListener('keypress', function(e) {
+        document.getElementById('github-url').addEventListener('keypress', function (e) {
             if (e.key === 'Enter') {
                 analyzeIssue();
             }
         });
     </script>
 </body>
+
 </html>

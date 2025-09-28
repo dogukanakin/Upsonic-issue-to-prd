@@ -148,7 +148,7 @@ async def analyze_issue(request: IssueAnalysisRequest):
         
         # Step 4: Prepare response
         response = IssueAnalysisResponse(
-            issue=issue,
+            issue=issue.to_simplified_dict(),
             related_files=analysis_data.get('relevant_files', []),
             analysis_summary=analysis_data.get('analysis', 'No analysis available'),
             prd_document=prd_document.to_markdown(),

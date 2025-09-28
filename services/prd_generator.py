@@ -216,7 +216,8 @@ class PRDGenerator:
                             acceptance_criteria=["Requirements are met"]
                         )],
                         file_modifications=[],
-                        constraints=["Maintain backward compatibility"]
+                        constraints=["Maintain backward compatibility"],
+                        original_issue_json=issue.to_simplified_dict()
                     )
 
             # Extract PRD data from task result
@@ -391,7 +392,8 @@ class PRDGenerator:
             problem_statement=problem_statement,
             use_cases=use_cases,
             file_modifications=file_modifications,
-            constraints=constraints
+            constraints=constraints,
+            original_issue_json=issue.to_simplified_dict()
         )
     
     def determine_issue_type(self, issue: GitHubIssue) -> str:
@@ -786,7 +788,8 @@ class PRDGenerator:
                     problem_statement=self.generate_problem_statement(issue, analysis_data),
                     use_cases=self.generate_use_cases(issue, self.determine_issue_type(issue)),
                     file_modifications=self.generate_file_modifications(issue, analysis_data),
-                    constraints=self.generate_constraints(issue, self.determine_issue_type(issue))
+                    constraints=self.generate_constraints(issue, self.determine_issue_type(issue)),
+                    original_issue_json=issue.to_simplified_dict()
                 )
 
             # Extract data from parsed JSON
@@ -832,10 +835,15 @@ class PRDGenerator:
                 problem_statement=problem_statement,
                 use_cases=use_cases,
                 file_modifications=file_modifications,
-                constraints=constraints
+                constraints=constraints,
+                original_issue_json=issue.to_simplified_dict()
             )
 
         except Exception as e:
             print(f"Error parsing generated PRD: {str(e)}")
             # Fallback to template-based generation
-            return self.generate_prd_template_based(issue, analysis_data)
+            prd = self.generate_prd_template_based(issue, analysis_data)
+            # Ensure original_issue_json is included
+            if not prd.original_issue_json:
+                prd.original_issue_json = issue.to_simplified_dict()
+            return prd

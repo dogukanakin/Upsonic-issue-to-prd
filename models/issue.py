@@ -36,13 +36,20 @@ class GitHubIssue(BaseModel):
     html_url: str
     comments: List[GitHubComment] = []
 
+    def to_simplified_dict(self) -> Dict[str, Any]:
+        """Return only title and body for simplified response"""
+        return {
+            "title": self.title,
+            "body": self.body
+        }
+
 
 class IssueAnalysisRequest(BaseModel):
     github_url: str
 
 
 class IssueAnalysisResponse(BaseModel):
-    issue: GitHubIssue
+    issue: Dict[str, Any]
     related_files: List[str] = []
     analysis_summary: str
     prd_document: str
