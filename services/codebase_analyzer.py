@@ -192,7 +192,28 @@ class CodebaseAnalyzer:
             if self.agent:
                 # Create Task-based analysis workflow
                 analysis_task = upsonic.Task(
-                    description=f"Analyze GitHub issue '{issue.title}' against codebase for relevant files and context. Return a JSON object with: analysis (string), relevant_files (array), issue_keywords (array), semantic_concepts (array)",
+                    description=f"""Analyze GitHub issue '{issue.title}' against the Upsonic codebase for relevant files and context.
+
+Issue Details:
+- Title: {issue.title}
+- Description: {issue.body or 'No description'}
+- This appears to be about: {'response truncation/display issues' if 'response' in issue.title.lower() and ('truncat' in issue.title.lower() or 'long' in issue.title.lower()) else 'general issue'}
+
+Focus on finding files related to:
+1. Task response handling and formatting
+2. Agent response processing
+3. Display/logging utilities that might truncate output
+4. Response serialization/deserialization
+
+Return ONLY a valid JSON object with this exact structure:
+{{
+  "analysis": "Brief analysis of the issue and affected components",
+  "relevant_files": ["src/upsonic/tasks/tasks.py", "src/upsonic/agent/agent.py", "src/upsonic/utils/printing.py"],
+  "issue_keywords": ["response", "truncation", "display", "logging"],
+  "semantic_concepts": ["response_handling", "output_formatting"]
+}}
+
+CRITICAL: relevant_files must contain actual file paths from the codebase, not generic placeholders.""",
                     tools=["CodebaseTool"],
                     response_format=str
                 )
@@ -206,18 +227,13 @@ class CodebaseAnalyzer:
                     parsed_result = json.loads(result)
                     return {
                         "analysis": parsed_result.get("analysis", f"AI-powered analysis completed. Result: {str(result)[:200]}..."),
-                        "relevant_files": parsed_result.get("relevant_files", ["src/upsonic/models/providers.py", "README.md"])[:10],
-                        "issue_keywords": parsed_result.get("issue_keywords", ["upsonic", "ai", "task-based"]),
-                        "semantic_concepts": parsed_result.get("semantic_concepts", ["ai_integration", "task_workflow"])
+                        "relevant_files": parsed_result.get("relevant_files", [])[:10],  # Remove hardcoded defaults
+                        "issue_keywords": parsed_result.get("issue_keywords", []),
+                        "semantic_concepts": parsed_result.get("semantic_concepts", [])
                     }
                 except json.JSONDecodeError:
-                    # If parsing fails, return structured response
-                    return {
-                        "analysis": f"AI-powered analysis completed: {str(result)[:300]}...",
-                        "relevant_files": ["src/upsonic/models/providers.py", "README.md"],
-                        "issue_keywords": ["upsonic", "ai", "task-based"],
-                        "semantic_concepts": ["ai_integration", "task_workflow"]
-                    }
+                    # If parsing fails, use fallback analysis instead of hardcoded defaults
+                    return self.enhanced_fallback_analysis(issue)
             else:
                 # Enhanced fallback analysis
                 return self.enhanced_fallback_analysis(issue)
@@ -496,9 +512,14 @@ class CodebaseAnalyzer:
     def enhanced_fallback_analysis(self, issue: GitHubIssue) -> Dict[str, Any]:
         """Enhanced fallback analysis with better intelligence"""
         keywords = self.extract_keywords_from_issue(issue)
-        relevant_files = self.fallback_file_discovery(issue)
-        concepts = self.extract_semantic_concepts(issue)
 
+        # For response truncation issues, prioritize specific files
+        if 'response' in issue.title.lower() and ('truncat' in issue.title.lower() or 'long' in issue.title.lower()):
+            relevant_files = self._get_response_truncation_files()
+        else:
+            relevant_files = self.fallback_file_discovery(issue)
+
+        concepts = self.extract_semantic_concepts(issue)
         domain = self.determine_technical_domain(issue)
         complexity = self.assess_complexity(issue)
 
@@ -534,6 +555,35 @@ class CodebaseAnalyzer:
             "issue_keywords": keywords,
             "semantic_concepts": concepts
         }
+
+    def _get_response_truncation_files(self) -> List[str]:
+        """Get files specifically related to response handling and truncation"""
+        response_files = []
+
+        # Core response handling files
+        core_files = [
+            'src/upsonic/tasks/tasks.py',  # Task.response property
+            'src/upsonic/agent/agent.py',  # Agent.do() and response processing
+            'src/upsonic/utils/__init__.py',  # Utility functions that might handle formatting
+        ]
+
+        # Check if files exist
+        for file_path in core_files:
+            full_path = os.path.join(self.codebase_path, file_path)
+            if os.path.exists(full_path):
+                response_files.append(file_path)
+
+        # Add any logging/display related files
+        logging_files = []
+        for file_path in self.get_python_files():
+            relative_path = os.path.relpath(file_path, self.codebase_path)
+            if any(keyword in relative_path.lower() for keyword in ['print', 'log', 'display', 'format']):
+                logging_files.append(relative_path)
+
+        # Combine and prioritize core files
+        all_files = response_files + logging_files[:5]  # Limit logging files
+
+        return all_files[:10]  # Return top 10 files
 
     def determine_technical_domain(self, issue: GitHubIssue) -> str:
         """Determine the technical domain of the issue"""

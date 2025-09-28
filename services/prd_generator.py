@@ -301,7 +301,20 @@ class PRDGenerator:
         if relevant_files:
             for i, file_path in enumerate(relevant_files[:5]):  # Limit to top 5 files
                 reason = f"Identified as relevant to this issue based on analysis"
-                if 'pricing' in issue.title.lower() or 'dynamic' in issue.title.lower():
+                # Context-aware file modification suggestions
+                if 'response' in issue.title.lower() and ('truncat' in issue.title.lower() or 'long' in issue.title.lower()):
+                    if 'tasks.py' in file_path:
+                        reason = "Task response property - core issue location"
+                        changes = "Review Task.response property for truncation logic. Check if string representation limits are causing the truncation issue."
+                    elif 'agent.py' in file_path:
+                        reason = "Agent response processing - where truncation might occur"
+                        changes = "Check agent.do() and do_async() methods for response formatting. Look for any string truncation or repr() limitations."
+                    elif 'utils' in file_path or 'print' in file_path.lower():
+                        reason = "Response display/formatting utilities"
+                        changes = "Review printing/logging utilities for response truncation. Check if display functions are limiting string length."
+                    else:
+                        changes = f"Review {file_path} for response handling and truncation issues"
+                elif 'pricing' in issue.title.lower() or 'dynamic' in issue.title.lower():
                     if 'providers.py' in file_path:
                         reason = "Model pricing data management - critical for dynamic pricing implementation"
                         changes = "Implement dynamic pricing system with OpenRouter API integration. Add caching layer and real-time price fetching capabilities."
