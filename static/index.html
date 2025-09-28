@@ -1,0 +1,516 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Issue to PRD Generator</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+
+        .main-content {
+            padding: 40px;
+        }
+
+        .input-section {
+            background: #f8f9fa;
+            padding: 30px;
+            border-radius: 8px;
+            margin-bottom: 30px;
+        }
+
+        .input-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: #333;
+        }
+
+        input[type="url"] {
+            width: 100%;
+            padding: 12px 16px;
+            border: 2px solid #e1e5e9;
+            border-radius: 6px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+
+        input[type="url"]:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 6px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+        }
+
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 20px;
+        }
+
+        .spinner {
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 10px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .results {
+            display: none;
+            margin-top: 30px;
+        }
+
+        .issue-info {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            border-left: 4px solid #667eea;
+        }
+
+        .issue-title {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 10px;
+        }
+
+        .issue-meta {
+            color: #666;
+            font-size: 0.9rem;
+        }
+
+        .related-files {
+            background: #e8f4f8;
+            padding: 15px;
+            border-radius: 6px;
+            margin-bottom: 20px;
+        }
+
+        .related-files h3 {
+            color: #2c5282;
+            margin-bottom: 10px;
+        }
+
+        .file-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .file-tag {
+            background: #667eea;
+            color: white;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+        }
+
+        .prd-section {
+            background: white;
+            border: 1px solid #e1e5e9;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        .prd-header {
+            background: #f8f9fa;
+            padding: 15px 20px;
+            border-bottom: 1px solid #e1e5e9;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .prd-content {
+            padding: 20px;
+            max-height: 600px;
+            overflow-y: auto;
+        }
+
+        .prd-content h1, .prd-content h2, .prd-content h3 {
+            color: #333;
+            margin-bottom: 15px;
+        }
+
+        .prd-content h1 {
+            font-size: 1.8rem;
+            border-bottom: 2px solid #667eea;
+            padding-bottom: 10px;
+        }
+
+        .prd-content h2 {
+            font-size: 1.4rem;
+            color: #667eea;
+        }
+
+        .prd-content h3 {
+            font-size: 1.2rem;
+            color: #555;
+        }
+
+        .prd-content ul, .prd-content ol {
+            margin: 10px 0 10px 20px;
+        }
+
+        .prd-content li {
+            margin-bottom: 5px;
+        }
+
+        .copy-btn {
+            background: #28a745;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 4px;
+            font-size: 14px;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+
+        .copy-btn:hover {
+            background: #218838;
+        }
+
+        .error {
+            background: #f8d7da;
+            color: #721c24;
+            padding: 15px;
+            border-radius: 6px;
+            margin-top: 20px;
+            border: 1px solid #f5c6cb;
+        }
+
+        .example-urls {
+            background: #e8f4f8;
+            padding: 15px;
+            border-radius: 6px;
+            margin-top: 15px;
+        }
+
+        .example-urls h4 {
+            color: #2c5282;
+            margin-bottom: 10px;
+        }
+
+        .example-url {
+            background: white;
+            padding: 8px 12px;
+            border-radius: 4px;
+            margin-bottom: 8px;
+            font-family: monospace;
+            font-size: 0.9rem;
+            color: #667eea;
+            cursor: pointer;
+            border: 1px solid #bee5eb;
+            transition: background 0.3s;
+        }
+
+        .example-url:hover {
+            background: #f8f9fa;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                margin: 10px;
+                border-radius: 8px;
+            }
+            
+            .header h1 {
+                font-size: 2rem;
+            }
+            
+            .main-content {
+                padding: 20px;
+            }
+            
+            .input-section {
+                padding: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🚀 Issue to PRD Generator</h1>
+            <p>GitHub issue'larını otomatik olarak PRD belgelerine dönüştürün</p>
+        </div>
+
+        <div class="main-content">
+            <div class="input-section">
+                <div class="input-group">
+                    <label for="github-url">GitHub Issue URL:</label>
+                    <input type="url" id="github-url" placeholder="https://github.com/owner/repo/issues/123" />
+                </div>
+                
+                <button class="btn" onclick="analyzeIssue()">📋 PRD Oluştur</button>
+
+                <div class="example-urls">
+                    <h4>💡 Örnek URL'ler:</h4>
+                    <div class="example-url" onclick="setExampleUrl('https://github.com/Upsonic/Upsonic/issues/398')">
+                        https://github.com/Upsonic/Upsonic/issues/398
+                    </div>
+                </div>
+            </div>
+
+            <div class="loading" id="loading">
+                <div class="spinner"></div>
+                <p>Issue analiz ediliyor ve PRD oluşturuluyor...</p>
+            </div>
+
+            <div class="results" id="results">
+                <div class="issue-info" id="issue-info">
+                    <!-- Issue bilgileri buraya gelecek -->
+                </div>
+
+                <div class="related-files" id="related-files">
+                    <!-- İlgili dosyalar buraya gelecek -->
+                </div>
+
+                <div class="prd-section">
+                    <div class="prd-header">
+                        <h3>📄 PRD Dökümanı</h3>
+                        <button class="copy-btn" onclick="copyPRD()">📋 Kopyala</button>
+                    </div>
+                    <div class="prd-content" id="prd-content">
+                        <!-- PRD içeriği buraya gelecek -->
+                    </div>
+                </div>
+            </div>
+
+            <div class="error" id="error" style="display: none;">
+                <!-- Hata mesajları buraya gelecek -->
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function setExampleUrl(url) {
+            document.getElementById('github-url').value = url;
+        }
+
+        async function analyzeIssue() {
+            const url = document.getElementById('github-url').value.trim();
+            
+            if (!url) {
+                showError('Lütfen bir GitHub issue URL\'i girin.');
+                return;
+            }
+
+            if (!isValidGitHubIssueUrl(url)) {
+                showError('Geçerli bir GitHub issue URL\'i girin. Örnek: https://github.com/owner/repo/issues/123');
+                return;
+            }
+
+            // UI durumlarını ayarla
+            showLoading();
+            hideResults();
+            hideError();
+
+            try {
+                const response = await fetch('/analyze-issue', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        github_url: url
+                    })
+                });
+
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.detail || `HTTP ${response.status}`);
+                }
+
+                const data = await response.json();
+                displayResults(data);
+
+            } catch (error) {
+                showError(`Hata oluştu: ${error.message}`);
+            } finally {
+                hideLoading();
+            }
+        }
+
+        function isValidGitHubIssueUrl(url) {
+            const pattern = /^https:\/\/github\.com\/[^\/]+\/[^\/]+\/issues\/\d+$/;
+            return pattern.test(url);
+        }
+
+        function displayResults(data) {
+            // Issue bilgilerini göster
+            const issueInfo = document.getElementById('issue-info');
+            issueInfo.innerHTML = `
+                <div class="issue-title">#${data.issue.number}: ${data.issue.title}</div>
+                <div class="issue-meta">
+                    📅 Oluşturulma: ${new Date(data.issue.created_at).toLocaleDateString('tr-TR')} | 
+                    👤 Kullanıcı: ${data.issue.user.login} | 
+                    🏷️ Durum: ${data.issue.state} | 
+                    ${data.issue.labels.map(label => `<span style="background: #${label.color}; color: white; padding: 2px 8px; border-radius: 12px; font-size: 0.8rem; margin-right: 5px;">${label.name}</span>`).join('')}
+                </div>
+            `;
+
+            // İlgili dosyaları göster
+            const relatedFiles = document.getElementById('related-files');
+            if (data.related_files && data.related_files.length > 0) {
+                relatedFiles.innerHTML = `
+                    <h3>📁 İlgili Dosyalar (${data.related_files.length})</h3>
+                    <div class="file-list">
+                        ${data.related_files.map(file => `<span class="file-tag">${file}</span>`).join('')}
+                    </div>
+                `;
+                relatedFiles.style.display = 'block';
+            } else {
+                relatedFiles.style.display = 'none';
+            }
+
+            // PRD içeriğini göster
+            const prdContent = document.getElementById('prd-content');
+            prdContent.innerHTML = formatMarkdown(data.prd_document);
+
+            showResults();
+        }
+
+        function formatMarkdown(markdown) {
+            // Basit markdown formatting
+            return markdown
+                .replace(/^# (.*$)/gim, '<h1>$1</h1>')
+                .replace(/^## (.*$)/gim, '<h2>$1</h2>')
+                .replace(/^### (.*$)/gim, '<h3>$1</h3>')
+                .replace(/^\- (.*$)/gim, '<li>$1</li>')
+                .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+                .replace(/\*(.*?)\*/g, '<em>$1</em>')
+                .replace(/\n\n/g, '</p><p>')
+                .replace(/^(?!<[h|l])/gm, '<p>')
+                .replace(/(<li>.*<\/li>)/gs, '<ul>$1</ul>')
+                .replace(/<\/ul>\s*<ul>/g, '');
+        }
+
+        function copyPRD() {
+            const prdContent = document.getElementById('prd-content');
+            const text = prdContent.innerText;
+            
+            navigator.clipboard.writeText(text).then(() => {
+                const btn = document.querySelector('.copy-btn');
+                const originalText = btn.textContent;
+                btn.textContent = '✅ Kopyalandı!';
+                btn.style.background = '#28a745';
+                
+                setTimeout(() => {
+                    btn.textContent = originalText;
+                    btn.style.background = '#28a745';
+                }, 2000);
+            }).catch(err => {
+                console.error('Kopyalama hatası:', err);
+                alert('Kopyalama başarısız. Lütfen içeriği manuel olarak kopyalayın.');
+            });
+        }
+
+        function showLoading() {
+            document.getElementById('loading').style.display = 'block';
+            document.querySelector('.btn').disabled = true;
+        }
+
+        function hideLoading() {
+            document.getElementById('loading').style.display = 'none';
+            document.querySelector('.btn').disabled = false;
+        }
+
+        function showResults() {
+            document.getElementById('results').style.display = 'block';
+        }
+
+        function hideResults() {
+            document.getElementById('results').style.display = 'none';
+        }
+
+        function showError(message) {
+            const errorDiv = document.getElementById('error');
+            errorDiv.textContent = message;
+            errorDiv.style.display = 'block';
+        }
+
+        function hideError() {
+            document.getElementById('error').style.display = 'none';
+        }
+
+        // Enter tuşu ile gönder
+        document.getElementById('github-url').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                analyzeIssue();
+            }
+        });
+    </script>
+</body>
+</html>
